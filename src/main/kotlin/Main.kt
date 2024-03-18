@@ -5,9 +5,9 @@ import java.sql.DriverManager
 fun main() {
     val jdbcUrl = "jdbc:postgresql://localhost:5432/school"
 
-    val connection = DriverManager.getConnection(jdbcUrl, "sjo", "")
-
     try {
+        val connection = DriverManager.getConnection(jdbcUrl, "sjo", "")
+
         println("Exercici 1"); Exercici1(connection)
         println("Exercici 2"); Exercici2(connection)
         println("Exercici 3"); Exercici3(connection)
@@ -15,11 +15,10 @@ fun main() {
         println("Exercici 7"); Exercici7(connection)
         println("Exercici 8"); Exercici8(connection)
 
+        connection.close()
     } catch (e: PSQLException) {
         println(e.message)
     }
-
-    connection.close()
 }
 
 
@@ -85,22 +84,23 @@ fun Exercici6(connection: Connection) {
     val codiRet = 5 // RET codi
     val notaNova = 9
 
+    // Preparamos la consulta para actualizar la nota tanto para FOL como para RET
+    val updateStatement = connection.prepareStatement("UPDATE notas SET nota = ? WHERE dni = ? AND cod = ?")
+
     // Update FOL grade
-    val updateFOLStatement = connection.prepareStatement("UPDATE notas SET nota = ? WHERE dni = ? AND cod = ?")
-    updateFOLStatement.setInt(1, notaNova) // posem la nova nota en el set
-    updateFOLStatement.setString(2, dni)
-    updateFOLStatement.setInt(3, codiFol)
-    val folUpdated = updateFOLStatement.executeUpdate()
-    updateFOLStatement.close()
+    updateStatement.setInt(1, notaNova)
+    updateStatement.setString(2, dni)
+    updateStatement.setInt(3, codiFol)
+    val folUpdated = updateStatement.executeUpdate()
 
     // Update RET grade
-    val updateRETQuery = "UPDATE notas SET nota = ? WHERE dni = ? AND cod = ?"
-    val updateRETStatement = connection.prepareStatement(updateRETQuery)
-    updateRETStatement.setInt(1, notaNova)
-    updateRETStatement.setString(2, dni)
-    updateRETStatement.setInt(3, codiRet)
-    val retUpdated = updateRETStatement.executeUpdate()
-    updateRETStatement.close()
+    updateStatement.setInt(1, notaNova) // Usamos la misma nota nueva para RET
+    updateStatement.setString(2, dni)
+    updateStatement.setInt(3, codiRet)
+    val retUpdated = updateStatement.executeUpdate()
+
+    // Cerramos la PreparedStatement
+    updateStatement.close()
 
     if (folUpdated > 0 && retUpdated > 0) {
         println("S'ha fet l'actualització correctament")
@@ -114,12 +114,10 @@ fun Exercici7(connection: Connection) {
     val dni = "12344345"
     val newPhoneNumber = "934885237"
 
-    val sqlString = "UPDATE alumnos SET telef = ? WHERE dni = ?"
-    val query = connection.prepareStatement(sqlString)
-    query.setString(1, newPhoneNumber)
-    query.setString(2, dni)
+    val sqlString = "UPDATE alumnos SET telef = '$newPhoneNumber' WHERE dni = '$dni'"
+    val query = connection.createStatement()
 
-    val columnesActualitzdes = query.executeUpdate()
+    val columnesActualitzdes = query.executeUpdate(sqlString)
 
     if (columnesActualitzdes > 0) {
         println("El telefòn del estudiant amb DNI: $dni s'actualitzat a $newPhoneNumber.")
