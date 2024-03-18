@@ -89,6 +89,75 @@ fun Exercici3(connection: Connection) {
     query.close()
 }
 
+
+fun Exercici4(connection:Connection) {
+    val query = connection.prepareStatement("INSERT INTO alumnos VALUES (?,?,?,?,?)")
+    var quantitatInserts:Int = 0
+
+
+
+    try {
+        for (usuario in usuariosNuevos) {
+            query.setString(1,usuario.dni)
+            query.setString(2,usuario.apenom)
+            query.setString(3,usuario.direc)
+            query.setString(4,usuario.pobla)
+            query.setString(5,usuario.telef)
+            quantitatInserts += query.executeUpdate()
+        }
+        println("S'han fet una quantitat de $quantitatInserts")
+    } catch (e:PSQLException){
+        println("Probablement has intentat inserir un DNI ja existent")
+    } finally {
+        query.close()
+    }
+}
+
+fun Exercici5(connection:Connection) {
+    val asignaturas:MutableList<Int> = mutableListOf()
+
+    var query = connection.createStatement()
+
+
+    val asignaturasABuscar = listOf("FOL","RET")
+    val result = query.executeQuery("SELECT * FROM asignaturas WHERE nombre = '${asignaturasABuscar[0]}' OR nombre = '${asignaturasABuscar[1]}'")
+
+
+    while (result.next()) {
+        val idAssignatura = result.getInt("cod")
+        asignaturas.add(idAssignatura)
+    }
+
+    query = connection.prepareStatement("INSERT INTO notas VALUES (?,?,?)")
+    var quantitatInserts:Int = 0
+
+
+    try {
+
+        for (usuario in usuariosNuevos) {
+            query.setString(1,usuario.dni)
+            query.setInt(2, asignaturas[0])
+            query.setInt(3,8)
+            quantitatInserts += query.executeUpdate()
+
+            query.setString(1,usuario.dni)
+            query.setInt(2, asignaturas[1])
+            query.setInt(3,8)
+            quantitatInserts += query.executeUpdate()
+        }
+
+
+        println("S'han fet una quantitat de $quantitatInserts")
+    } catch (e:PSQLException){
+        println("Probablement el usuari no existeix o has duplicat el dni")
+        println(e.message)
+    } finally {
+        query.close()
+    }
+}
+
+
+
 fun Exercici6(connection: Connection) {
     val dni = "4448242"
     val codiFol = 4 // FOL codi
@@ -155,69 +224,4 @@ fun Exercici8(connection: Connection) {
     }
 
     deleteStatement.close()
-}
-fun Exercici4(connection:Connection) {
-    val query = connection.prepareStatement("INSERT INTO alumnos VALUES (?,?,?,?,?)")
-    var quantitatInserts:Int = 0
-
-
-
-    try {
-        for (usuario in usuariosNuevos) {
-            query.setString(1,usuario.dni)
-            query.setString(2,usuario.apenom)
-            query.setString(3,usuario.direc)
-            query.setString(4,usuario.pobla)
-            query.setString(5,usuario.telef)
-            quantitatInserts += query.executeUpdate()
-        }
-        println("S'han fet una quantitat de $quantitatInserts")
-    } catch (e:PSQLException){
-        println("Probablement has intentat inserir un DNI ja existent")
-    } finally {
-        query.close()
-    }
-}
-
-fun Exercici5(connection:Connection) {
-    val asignaturas:MutableList<Int> = mutableListOf()
-
-    var query = connection.createStatement()
-
-
-    val asignaturasABuscar = listOf("FOL","RET")
-    val result = query.executeQuery("SELECT * FROM asignaturas WHERE nombre = '${asignaturasABuscar[0]}' OR nombre = '${asignaturasABuscar[1]}'")
-
-
-    while (result.next()) {
-        val idAssignatura = result.getInt("cod")
-        asignaturas.add(idAssignatura)
-    }
-
-    query = connection.prepareStatement("INSERT INTO notas VALUES (?,?,?)")
-    var quantitatInserts:Int = 0
-
-
-    try {
-
-        for (usuario in usuariosNuevos) {
-            query.setString(1,usuario.dni)
-            query.setInt(2, asignaturas[0])
-            query.setInt(3,8)
-            quantitatInserts += query.executeUpdate()
-
-            query.setString(1,usuario.dni)
-            query.setInt(2, asignaturas[1])
-            query.setInt(3,8)
-            quantitatInserts += query.executeUpdate()
-        }
-
-
-        println("S'han fet una quantitat de $quantitatInserts")
-    } catch (e:PSQLException){
-        println("Probablement el usuari no existeix o has duplicat el dni")
-        println(e.message)
-    } finally {
-        query.close()
-    }
 }
