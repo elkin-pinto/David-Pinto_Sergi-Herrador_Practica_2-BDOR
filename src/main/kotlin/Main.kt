@@ -21,7 +21,7 @@ fun main() {
     }
 }
 
-
+// 1.- Mostrar les dades de la taula ALUMNOS.
 fun Exercici1(connection: Connection) {
 
     val query = connection.createStatement()
@@ -41,6 +41,7 @@ fun Exercici1(connection: Connection) {
     query.close()
 }
 
+// 2.- Mostrar totes les dades de la taula NOTAS
 fun Exercici2(connection: Connection) {
     val query = connection.createStatement()
     val sql = "SELECT * FROM notas"
@@ -57,6 +58,7 @@ fun Exercici2(connection: Connection) {
     query.close()
 }
 
+// 3.- Mostrar les notes de l’alumne amb DNI 4448242 de la taula NOTAS utilitzant el Prepared Statement.
 fun Exercici3(connection: Connection) {
     val dni = "4448242"
 
