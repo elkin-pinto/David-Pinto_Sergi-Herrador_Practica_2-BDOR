@@ -3,13 +3,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 
-data class Usuario(val dni:String,val apenom:String, val direc:String,val pobla:String, val telef:String)
+data class Usuario(val dni: String, val apenom: String, val direc: String, val pobla: String, val telef: String)
 
-val usuariosNuevos = listOf(
-    Usuario("98765432", "Gómez Pérez, Juan", "C/Gran Vía, 10", "Barcelona", "932345678"),
-    Usuario("34567891", "Martínez López, Ana", "Avda. Libertad, 15", "Valencia", "963456789"),
-    Usuario("45678901", "Sánchez Rodríguez, Pablo", "C/Alcalá, 45", "Madrid", "910111213")
-)
 
 fun main() {
     val jdbcUrl = "jdbc:postgresql://localhost:5432/school"
@@ -20,6 +15,8 @@ fun main() {
         println("Exercici 1"); Exercici1(connection)
         println("Exercici 2"); Exercici2(connection)
         println("Exercici 3"); Exercici3(connection)
+        println("Exercici 4"); Exercici4(connection)
+        println("Exercici 5"); Exercici5(connection)
         println("Exercici 6"); Exercici6(connection)
         println("Exercici 7"); Exercici7(connection)
         println("Exercici 8"); Exercici8(connection)
@@ -89,39 +86,44 @@ fun Exercici3(connection: Connection) {
     query.close()
 }
 
+// 4.- Insertar 3 alumnes nous. Inventat les dades dels alumnes nous.
 
-fun Exercici4(connection:Connection) {
-    val query = connection.prepareStatement("INSERT INTO alumnos VALUES (?,?,?,?,?)")
-    var quantitatInserts:Int = 0
+//Llista de nous usuaris
+val usuariosNuevos = listOf(
+    Usuario("98765432", "Gómez Pérez, Juan", "C/Gran Vía, 10", "Barcelona", "932345678"),
+    Usuario("34567891", "Martínez López, Ana", "Avda. Libertad, 15", "Valencia", "963456789"),
+    Usuario("45678901", "Sánchez Rodríguez, Pablo", "C/Alcalá, 45", "Madrid", "910111213")
+)
 
 
+fun Exercici4(connection: Connection) {
+    val query = connection.createStatement()
+    var quantitatInserts = 0
 
     try {
         for (usuario in usuariosNuevos) {
-            query.setString(1,usuario.dni)
-            query.setString(2,usuario.apenom)
-            query.setString(3,usuario.direc)
-            query.setString(4,usuario.pobla)
-            query.setString(5,usuario.telef)
-            quantitatInserts += query.executeUpdate()
+            val sqlString = "INSERT INTO alumnos VALUES (${usuario.dni},${usuario.apenom},${usuario.direc},${usuario.pobla},${usuario.telef})"
+            quantitatInserts += query.executeUpdate(sqlString)
         }
-        println("S'han fet una quantitat de $quantitatInserts")
-    } catch (e:PSQLException){
+        println("S'han fet una quantitat de $quantitatInserts inserts")
+
+    } catch (e: PSQLException) {
         println("Probablement has intentat inserir un DNI ja existent")
     } finally {
         query.close()
     }
 }
 
-fun Exercici5(connection:Connection) {
-    val asignaturas:MutableList<Int> = mutableListOf()
+// 5.- Insertar les notes per aquests 3 nous alumnes de les assignatures FOL i RET. Tots han tret un 8 en les dues
+// assignatures. Utilitza el Prepared Statement.
+
+fun Exercici5(connection: Connection) {
+    val asignaturas: MutableList<Int> = mutableListOf()
 
     var query = connection.createStatement()
-
-
-    val asignaturasABuscar = listOf("FOL","RET")
-    val result = query.executeQuery("SELECT * FROM asignaturas WHERE nombre = '${asignaturasABuscar[0]}' OR nombre = '${asignaturasABuscar[1]}'")
-
+    val asignaturasABuscar = listOf("FOL", "RET")
+    val result =
+        query.executeQuery("SELECT * FROM asignaturas WHERE nombre = '${asignaturasABuscar[0]}' OR nombre = '${asignaturasABuscar[1]}'")
 
     while (result.next()) {
         val idAssignatura = result.getInt("cod")
@@ -129,27 +131,25 @@ fun Exercici5(connection:Connection) {
     }
 
     query = connection.prepareStatement("INSERT INTO notas VALUES (?,?,?)")
-    var quantitatInserts:Int = 0
-
+    var quantitatInserts = 0
 
     try {
-
         for (usuario in usuariosNuevos) {
-            query.setString(1,usuario.dni)
+            query.setString(1, usuario.dni)
             query.setInt(2, asignaturas[0])
-            query.setInt(3,8)
+            query.setInt(3, 8)
             quantitatInserts += query.executeUpdate()
 
-            query.setString(1,usuario.dni)
+            query.setString(1, usuario.dni)
             query.setInt(2, asignaturas[1])
-            query.setInt(3,8)
+            query.setInt(3, 8)
             quantitatInserts += query.executeUpdate()
         }
 
 
-        println("S'han fet una quantitat de $quantitatInserts")
-    } catch (e:PSQLException){
-        println("Probablement el usuari no existeix o has duplicat el dni")
+        println("S'han fet una quantitat de $quantitatInserts inserts")
+    } catch (e: PSQLException) {
+        println("Probablement l'usuari no existeix o el dni està duplicat")
         println(e.message)
     } finally {
         query.close()
@@ -157,37 +157,23 @@ fun Exercici5(connection:Connection) {
 }
 
 
-
+// 6.- Modificar les notes de l’alumne "Cerrato Vela, Luis" de FOL i RET, ha tret un 9.
 fun Exercici6(connection: Connection) {
     val dni = "4448242"
-    val codiFol = 4 // FOL codi
-    val codiRet = 5 // RET codi
     val notaNova = 9
 
-    // Preparamos la consulta para actualizar la nota tanto para FOL como para RET
-    val updateStatement = connection.prepareStatement("UPDATE notas SET nota = ? WHERE dni = ? AND cod = ?")
+    val updateStatement = connection.createStatement()
 
-    // Update FOL grade
-    updateStatement.setInt(1, notaNova)
-    updateStatement.setString(2, dni)
-    updateStatement.setInt(3, codiFol)
-    val folUpdated = updateStatement.executeUpdate()
-
-    // Update RET grade
-    updateStatement.setInt(1, notaNova) // Usamos la misma nota nueva para RET
-    updateStatement.setString(2, dni)
-    updateStatement.setInt(3, codiRet)
-    val retUpdated = updateStatement.executeUpdate()
-
-    // Cerramos la PreparedStatement
-    updateStatement.close()
-
-    if (folUpdated > 0 && retUpdated > 0) {
-        println("S'ha fet l'actualització correctament")
-    } else {
-        println("No s'ha actualitzat ningun registre")
-    }
+    // Ejecutamos la consulta
+    val rowsUpdated = updateStatement.executeUpdate(
+        "UPDATE notas " +
+                "SET nota = $notaNova " +
+                "FROM asignaturas " +
+                "WHERE notas.cod = asignaturas.cod AND notas.dni = $dni AND (asignaturas.nombre = 'FOL' OR asignaturas.nombre = 'RET')"
+    )
+    println("Filas actualizadas: $rowsUpdated")
 }
+
 
 // 7.- Modificar el teléfon de l’alumne amb DNI = 12344345, el nou teléfon és 934885237.
 fun Exercici7(connection: Connection) {
